@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   Box,
   Typography,
@@ -19,9 +19,12 @@ import PhoneIphoneIcon from "@mui/icons-material/PhoneIphone";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { motion } from "framer-motion";
-import api from "../api"; // your axios instance
+import api from "../api"; // axios instance
+import { AuthContext } from "../context/AuthContext"; // Auth context
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext); // use context login
   const [formData, setFormData] = useState({ email: "", password: "", otp: "" });
   const [useOtp, setUseOtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -29,20 +32,17 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
-  const navigate = useNavigate();
-
   // Handle input changes
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   // Toggle login method
   const handleToggleLoginMethod = () => {
     setUseOtp(!useOtp);
-    setFormData({ ...formData, password: "", otp: "" }); // clear previous inputs
+    setFormData({ ...formData, password: "", otp: "" });
   };
 
   // Send OTP
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
+  const handleSendOtp = async () => {
     if (!formData.email) {
       setSnackbar({ open: true, message: "Enter your email", severity: "warning" });
       return;
@@ -59,23 +59,30 @@ const LoginPage = () => {
     }
   };
 
-  // Login
+  // Handle login
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!formData.email || (!useOtp && !formData.password) || (useOtp && !formData.otp)) {
       setSnackbar({ open: true, message: "Fill required fields", severity: "warning" });
       return;
     }
+
     try {
       setLoading(true);
       let res;
+
       if (useOtp) {
         res = await api.post("/user/login-otp", { email: formData.email, otp: formData.otp });
       } else {
         res = await api.post("/user/login", { email: formData.email, password: formData.password });
       }
-      setSnackbar({ open: true, message: res.data.message || "Login successful", severity: "success" });
-      navigate("/essenceRadio");
+
+      // Save user in context & localStorage
+      login(res.data.user);
+
+      setSnackbar({ open: true, message: "Login successful", severity: "success" });
+
+      navigate("/essenceRadio"); // redirect after login
     } catch (err) {
       setSnackbar({ open: true, message: err.response?.data?.message || "Login failed", severity: "error" });
     } finally {
@@ -122,10 +129,9 @@ const LoginPage = () => {
           </Typography>
 
           <Box component="form" onSubmit={handleLogin}>
-          <Typography sx={{ color: "#fff", fontWeight: "bold", textAlign:'start' }}>Email </Typography>
-
+            {/* Email */}
             <TextField
-              
+              label="Email"
               placeholder="Enter your email"
               fullWidth
               margin="normal"
@@ -145,11 +151,10 @@ const LoginPage = () => {
               }}
             />
 
+            {/* Password or OTP */}
             {!useOtp ? (
-              <>
-              <Typography sx={{ color: "#fff", fontWeight: "bold", textAlign:'start' }}>password </Typography>
               <TextField
-                
+                label="Password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 fullWidth
@@ -176,12 +181,10 @@ const LoginPage = () => {
                   style: { color: "#fff", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8, paddingLeft: 12 },
                 }}
               />
-              </>
             ) : (
               <>
-              <Typography sx={{ color: "#fff", fontWeight: "bold", textAlign:'start' }}>OTP </Typography>
                 <TextField
-                  
+                  label="OTP"
                   placeholder="Enter the OTP"
                   fullWidth
                   margin="normal"
@@ -200,8 +203,7 @@ const LoginPage = () => {
                   }}
                 />
                 <Button
-                 
-                   type="button"  
+                  type="button"
                   onClick={handleSendOtp}
                   size="small"
                   sx={{
@@ -219,6 +221,7 @@ const LoginPage = () => {
               </>
             )}
 
+            {/* Remember Me & Forgot Password */}
             <Box display="flex" justifyContent="space-between" alignItems="center" my={2}>
               <FormControlLabel
                 control={<Checkbox size="small" checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} sx={{ color: "#FFD700" }} />}
@@ -229,6 +232,7 @@ const LoginPage = () => {
               </Link>
             </Box>
 
+            {/* Login Button */}
             <Button
               type="submit"
               variant="contained"
@@ -236,9 +240,6 @@ const LoginPage = () => {
               sx={{
                 py: 1.5,
                 background: "linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%)",
-                  color: "#000",
-                 
-                
                 color: "#000",
                 fontWeight: "bold",
                 borderRadius: 3,
@@ -249,13 +250,14 @@ const LoginPage = () => {
               {useOtp ? "Login with OTP" : "Login with Password"}
             </Button>
 
+            {/* Toggle Login Method */}
             <Button
               fullWidth
               onClick={handleToggleLoginMethod}
               sx={{
                 mt: 2,
                 color: "black",
-                fontWeight:"bold",
+                fontWeight: "bold",
                 borderColor: "#FFD700",
                 borderRadius: 3,
                 textTransform: "none",
@@ -269,6 +271,7 @@ const LoginPage = () => {
         </Box>
       </motion.div>
 
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

@@ -11,6 +11,9 @@ import {
 } from "@mui/material";
 import { useNavigate,Link as RouterLink, } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { InputAdornment, IconButton } from "@mui/material";
+
 import api from "../api";
 
 const SignupPage = () => {
@@ -24,6 +27,7 @@ const SignupPage = () => {
   const [step, setStep] = useState(1); // 1=details, 2=OTP, 3=password
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -225,18 +229,32 @@ const SignupPage = () => {
 
           {step === 3 && (
             <Box>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Create Password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                InputLabelProps={{ style: { color: "rgba(255,255,255,0.8)" } }}
-                InputProps={{ style: { color: "#fff", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8, paddingLeft: 12 } }}
-                required
-              />
+            <TextField
+  fullWidth
+  margin="normal"
+  label="Create Password"
+  name="password"
+  type={showPassword ? "text" : "password"}
+  value={formData.password}
+  onChange={handleChange}
+  InputLabelProps={{ style: { color: "rgba(255,255,255,0.8)" } }}
+  InputProps={{
+    style: { color: "#fff", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8, paddingLeft: 12 },
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton
+          onClick={() => setShowPassword((prev) => !prev)}
+          edge="end"
+          sx={{ color: "#fff" }}
+        >
+          {showPassword ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+  }}
+  required
+/>
+
               <Button
                 fullWidth
                 variant="contained"

@@ -20,6 +20,7 @@ model User {
   password  String?
   otp       String?
   otpExpiry DateTime?
+  currentToken String?  @db.Text
   createdAt DateTime @default(now())
 }
 
